@@ -1,0 +1,108 @@
+"""
+ETL Pipeline: Titanic (real Kaggle train.csv)
+Built step by step: Extract -> Transform -> Load
+"""
+
+import sqlite3
+import numpy as np
+import pandas as pd
+
+
+# ---------- 1. EXTRACT ----------
+def extract(path: str = "C:\\Users\\My Computer\\Downloads\\Python\\ETL\\titanic\\train.csv") -> pd.DataFrame:
+    df = pd.read_csv(path)
+    print(f"[extract] pulled {len(df)} rows, {len(df.columns)} columns")
+    # print(df.head(5))
+    # print(df.columns)
+    # df.info()
+    # df.describe()
+    # df.isnull().sum()   
+    # df["Sex"].unique()
+    # (df["Age"] < 0).any()
+    # (df["Fare"] < 0).any()
+    return df
+
+
+# ---------- 2. TRANSFORM ----------
+def transform(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    # 0) dedupe FIRST, on the true identifier, while PassengerId still exists
+    df = df.drop_duplicates(subset="PassengerId")
+
+    # a) Title extraction from Name (also lets us do smarter Age imputation)
+    df["Title"] = df["Name"].str.extract(r",\s*([^\.]+)\.")
+    df["Title"] = df["Title"].replace({"Mlle": "Miss", "Ms": "Miss", "Mme": "Mrs"})
+    rare_titles = ["Dr", "Rev", "Major", "Col", "Don", "Lady", "Sir",
+                   "Capt", "the Countess", "Jonkheer"]
+    df["Title"] = df["Title"].replace(rare_titles, "Rare")
+
+    # b) Age: fill missing with the median age WITHIN each title group
+    #    (a Master gets a boy's median age, a Mr gets an adult male's, etc.)
+    df["Age"] = df.groupby("Title")["Age"].transform(lambda x: x.fillna(x.median()))
+    df["Age"] = df["Age"].astype(int)  # safe now: no missing values left
+
+    # c) Cabin -> Deck (first letter). 'U' = Unknown, since ~77% are missing
+    #    and dropping them all would throw away real signal for the ones we have.
+    df["Deck"] = df["Cabin"].str[0].fillna("U")
+
+    # d) Embarked: only 2 missing -> safe to fill with the mode (most common port)
+    df["Embarked"] = df["Embarked"].fillna(df["Embarked"].mode()[0])
+
+    # e) Fare: right-skewed with real (not erroneous) high outliers -> log-transform
+    #    instead of deleting rows, so extreme fares don't dominate a model later.
+    df["Fare_log"] = np.log1p(df["Fare"])
+
+    # f) Family features (simple, interpretable engineered features)
+    df["FamilySize"] = df["SibSp"] + df["Parch"] + 1
+    df["IsAlone"] = (df["FamilySize"] == 1).astype(int)
+
+    # g) drop columns we've replaced with better features, or that are
+    #    high-cardinality with no direct signal (raw Name, Ticket, Cabin, PassengerId)
+    df = df.drop(columns=["Name", "Ticket", "Cabin", "PassengerId"])
+
+    # h) encode categoricals
+    #    - Sex, Embarked, Title, Deck: no inherent order -> one-hot encode
+    #    - Pclass: already an ordinal number (1/2/3) -> leave as-is, don't one-hot
+    df = pd.get_dummies(df, columns=["Sex", "Embarked", "Title", "Deck"], drop_first=True)
+
+    # i) lowercase all column names (convention, avoids case-mismatch bugs later)
+    df.columns = [c.lower() for c in df.columns]
+
+    # j) Correlation check
+    df.corr()["survived"].sort_values(ascending=False)
+
+
+    print(f"[transform] {len(df)} rows, {len(df.columns)} columns after encoding")
+
+    return df
+
+
+# ---------- 3. LOAD ----------
+def load(df: pd.DataFrame, db_path: str = "titanic_clean.db", table: str = "passengers"):
+    conn = sqlite3.connect(db_path)
+    df.to_sql(table, conn, if_exists="replace", index=False)
+    conn.close()
+    print(f"[load] wrote {len(df)} rows into {db_path} ({table})")
+
+
+def run_pipeline():
+    raw = extract()
+    clean = transform(raw)
+    load(clean)
+
+    # sanity check
+    conn = sqlite3.connect("titanic_clean.db")
+    result = pd.read_sql(
+        "SELECT pclass, ROUND(AVG(survived), 2) AS survival_rate, COUNT(*) AS n "
+        "FROM passengers GROUP BY pclass", conn 
+    )
+    conn.close()
+    print("\n[query check] survival rate by class:")
+    print(result.to_string(index=False))
+
+    return clean
+
+
+if __name__ == "__main__":
+    run_pipeline()

@@ -1,0 +1,1 @@
+with open('notes.txt' ,'r') as f:

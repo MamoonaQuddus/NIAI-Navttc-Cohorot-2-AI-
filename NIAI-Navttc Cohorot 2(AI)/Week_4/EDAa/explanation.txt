@@ -1,0 +1,99 @@
+1. One numerical variable → Histogram
+
+Example: book prices
+
+plt.hist(df["price"])
+
+Question:
+
+"How are book prices distributed?"
+
+You want to see ranges:
+
+$0-10     → many books
+$10-20    → many books
+$20-30    → few books
+$30-40    → very few
+
+Histogram = distribution of numerical data.
+
+2. One categorical variable → Bar chart
+
+Example: book genre
+
+df["genre"].value_counts().plot(kind="bar")
+
+Question:
+
+"How many books are in each genre?"
+
+Fiction   → 400
+Fantasy   → 250
+Romance   → 180
+
+Bar chart = compare categories.
+
+3. Two numerical variables → Scatter plot
+
+Example:
+
+price vs pages
+
+plt.scatter(df["pages"], df["price"])
+
+Question:
+
+"Do books with more pages tend to have higher prices?"
+
+Scatter = relationship between two numerical variables.
+
+4. One categorical + one numerical → Box plot / Bar chart
+
+Example:
+
+genre vs price
+
+df.boxplot(column="price", by="genre")
+
+Question:
+
+"How does price differ across genres?"
+
+You're comparing the numerical variable (price) between categories (genre).
+
+5. Two categorical variables → Bar chart / Crosstab
+
+Example:
+
+genre vs author
+
+pd.crosstab(df["genre"], df["author"])
+
+Or visualize counts with a bar chart.
+
+Question:
+
+"How are authors distributed across genres?"
+
+6. Numerical variable + time → Line chart
+
+Example:
+
+year vs average book price
+
+df.groupby("year")["price"].mean().plot(kind="line")
+
+Question:
+
+"How has average book price changed over time?"
+
+Line = trend/progression, especially time.
+
+🧠 Your cheat sheet
+What you have	What you want to know	Graph
+1 numerical	Distribution	Histogram
+1 categorical	Compare categories/counts	Bar chart
+2 numerical	Relationship	Scatter plot
+Categorical + numerical	Compare numbers between groups	Box plot / Bar
+2 categorical	Compare category combinations	Bar / Crosstab
+Numerical + time	Trend over time	Line chart

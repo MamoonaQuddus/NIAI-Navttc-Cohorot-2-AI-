@@ -1,0 +1,1 @@
+print(products.groupby('category').count())

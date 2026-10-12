@@ -1,0 +1,58 @@
+What each column means
+Column	Meaning
+PassengerId	Unique row number for each passenger (just an ID)
+Survived	The answer: 0 = died, 1 = survived
+Pclass	Ticket class: 1 = first (richest), 2 = second, 3 = third
+Name	Passenger's full name, including title (Mr, Mrs, etc.)
+Sex	male / female
+Age	Age in years (some missing)
+SibSp	Number of siblings + spouses travelling with them
+Parch	Number of parents + children travelling with them
+Ticket	Ticket number (messy text, little use directly)
+Fare	Price paid for the ticket
+Cabin	Cabin number, e.g. C85 (mostly missing)
+Embarked	Port where they boarded: S = Southampton, C = Cherbourg, Q = Queenstown
+
+
+
+
+1. Understand
+      ↓
+2. Identify Target
+      ↓
+3. Remove useless columns
+      ↓
+4. Check missing values
+      ↓
+5. Understand categorical columns
+      ↓
+6. Understand numerical columns
+      ↓
+7. Handle missing values
+      ↓
+8. Encode categorical data
+      ↓
+9. Check outliers / suspicious values
+      ↓
+10. Split X and y
+      ↓
+11. Scale if needed
+      ↓
+12. Train model
+
+
+
+| Feature       | Type                  | Question                     |
+| ------------- | --------------------- | ---------------------------- |
+| `PassengerId` | Numerical             | Is it useful for prediction? |
+| `Survived`    | Numerical             | 🎯 Target                    |
+| `Pclass`      | Numerical/Categorical | Useful?                      |
+| `Name`        | Text                  | Can it help?                 |
+| `Sex`         | Categorical           | Useful?                      |
+| `Age`         | Numerical             | Missing?                     |
+| `SibSp`       | Numerical             | Useful?                      |
+| `Parch`       | Numerical             | Useful?                      |
+| `Ticket`      | Text                  | Useful?                      |
+| `Fare`        | Numerical             | Missing/outliers?            |
+| `Cabin`       | Categorical/Text      | Lots of missing?             |
+| `Embarked`    | Categorical           | Missing?                     |
